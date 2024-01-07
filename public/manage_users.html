@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Manage Users</title>
+      <style>
+        body {
+            color: #333;
+            background: linear-gradient(to right, #fff, #cacaca);
+            text-align: center;
+            padding-top: 100px;
+            font-family: Arial, sans-serif;
+        }
+        #users-table {
+            margin: 0 auto;
+            width: 90%;
+            max-width: 600px;
+        }
+        #users-table th, #users-table td {
+            padding: 10px;
+            border: 1px solid #bbb;
+        }
+        #users-table th {
+            background: #f2f2f2;
+        }
+        #users-table td {
+            background: #fff;
+        }
+        #users-table tbody button {
+          padding: 10px 20px;
+          background: #bbb;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+          border-radius: 10%;
+        }
+        #users-table tbody button:hover {
+          background: #aaa;
+          border-radius: 15%;
+        }
+        form {
+          background: #f2f2f2;
+          border-radius: 5px;
+          display: inline-block;
+          padding: 20px;
+          box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
+          width: 90%;
+          max-width: 600px;
+        }
+        form label {
+          display: block;
+          margin-bottom: 10px;
+        }
+        form input[type="text"], form input[type="password"], form select {
+          padding: 10px;
+          width: 80%;
+          margin-bottom: 20px;
+        }
+        form input[type="submit"], form button {
+          padding: 10px 20px;
+          background: #bbb;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+          border-radius: 10%;
+        }
+        form input[type="submit"]:hover, form button:hover {
+          background: #aaa;
+          border-radius: 15%;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Manage Users</h1>
+    <h2>Create User</h2>
+    <form id="create-user-form">
+      <label for="username">Username:</label><br />
+      <input type="text" id="username" name="username" /><br />
+      <label for="password">Password:</label><br />
+      <input type="password" id="password" name="password" /><br />
+      <label for="role-id">Role:</label><br />
+      <select id="role-id" name="roleId"></select>
+      <br /><br />
+      <input type="submit" value="Submit" />
+    </form>
+
+    <h2>Existing Users</h2>
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Role ID</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="update-user-modal" style="display: none">
+      <h2>Update User</h2>
+      <form id="update-user-form">
+        <input type="hidden" id="update-user-id" name="id" />
+        <label for="update-username">Username:</label><br />
+        <input type="text" id="update-username" name="username" /><br />
+        <label for="update-password">Password:</label><br />
+        <input type="password" id="update-password" name="password" /><br />
+        <label for="update-role-id">Role:</label><br />
+        <select id="update-role-id" name="roleId"></select>
+        <br /><br />
+        <input type="submit" value="Submit" />
+        <button type="reset" value="Cancel">Cancel</button>
+      </form>
+    </div>
+
+    <script>
+      function getCookie(name) {
+        let cookieArr = document.cookie.split(";");
+    
+        for(let i = 0; i < cookieArr.length; i++) {
+            let cookiePair = cookieArr[i].split("=");
+    
+            if(name == cookiePair[0].trim()) {
+                return decodeURIComponent(cookiePair[1]);
+            }
+        }
+        return null;
+      }
+      async function sendRequest(method, url, data) {
+        const response = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "authorization": getCookie("accessToken"),
+          },
+          body: JSON.stringify(data),
+        });
+
+        // Return response text for non-JSON responses
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          return response.json();
+        } else {
+          return response.text();
+        }
+      }
+
+      // Populate role options in create and update user forms
+      async function populateRoleOptions() {
+        const roles = await sendRequest("GET", "/users/roles");
+        const roleSelects = document.querySelectorAll("select[name=roleId]");
+        for (const roleSelect of roleSelects) {
+          for (const role of roles) {
+            const option = document.createElement("option");
+            option.value = role.id;
+            option.textContent = role.name;
+            roleSelect.appendChild(option);
+          }
+        }
+      }
+
+      // Create new user
+      const createUserForm = document.querySelector("#create-user-form");
+      createUserForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(createUserForm);
+        const data = Object.fromEntries(formData.entries());
+        const responseText = await sendRequest("POST", "/users", data);
+        alert(responseText.success)
+        createUserForm.reset();
+        populateUsersTable();
+      });
+
+      // Populate users table
+      async function populateUsersTable() {
+        const users = await sendRequest("GET", "/users");
+        const usersTableBody = document.querySelector("#users-table tbody");
+        usersTableBody.innerHTML = "";
+        for (const user of users) {
+          const tr = document.createElement("tr");
+
+          // ID
+          const idTd = document.createElement("td");
+          idTd.textContent = user.id;
+          tr.appendChild(idTd);
+
+          // Username
+          const usernameTd = document.createElement("td");
+          usernameTd.textContent = user.username;
+          tr.appendChild(usernameTd);
+
+          // Role
+          const roleTd = document.createElement("td");
+          roleTd.textContent = user.roleId;
+          tr.appendChild(roleTd);
+
+          // Actions
+          const actionsTd = document.createElement("td");
+
+          // Update button
+          const updateButton = document.createElement("button");
+          updateButton.textContent = "Update";
+          updateButton.addEventListener("click", () => {
+            showUpdateUserModal(user);
+          });
+          actionsTd.appendChild(updateButton);
+
+          // Delete button
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "Delete";
+          deleteButton.addEventListener("click", async () => {
+            const response = await sendRequest("DELETE", "/users/" + user.id);
+            alert(response.success);
+            populateUsersTable();
+          });
+          actionsTd.appendChild(deleteButton);
+
+          tr.appendChild(actionsTd);
+          usersTableBody.appendChild(tr);
+        }
+      }
+
+      // Hide update user modal
+      function hideUpdateUserModal() {
+        document.querySelector("#update-user-modal").style.display = "none";
+      }
+
+      // Show update user modal
+      function showUpdateUserModal(user) {
+        document.querySelector("#update-user-id").value = user.id;
+        document.querySelector("#update-username").value = user.username;
+        document.querySelector("#update-role-id").value = user.roleId;
+        document.querySelector("#update-user-modal").style.display = "block";
+      }
+
+      // Update user
+      const updateUserForm = document.querySelector("#update-user-form");
+      updateUserForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(updateUserForm);
+        const data = Object.fromEntries(formData.entries());
+        const responseText = await sendRequest(
+          "PATCH",
+          "/users/" + data.id,
+          data
+        );
+        alert(responseText.success)
+        await hideUpdateUserModal();
+        await populateUsersTable();
+      });
+
+      // Cancel update user
+      const cancelupdate = document.querySelector("#update-user-form");
+      cancelupdate.addEventListener("reset", async () => {
+        hideUpdateUserModal();
+      });
+
+      // Initialize page
+      populateRoleOptions();
+      populateUsersTable();
+    </script>
+  </body>
+</html>
