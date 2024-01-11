@@ -39,7 +39,6 @@ export class AuthMiddleware implements NestMiddleware {
       req.user = payload;
       next();
     } catch (err) {
-      console.log(err);
       throw new ForbiddenException();
     }
   }

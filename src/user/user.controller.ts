@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { UserService } from './user.service';
+import { UserParamsDto } from 'src/dtos/dto.auth';
 
 @Controller('users')
 export class UserController {
@@ -42,25 +43,16 @@ export class UserController {
   }
 
   @Post()
-  createUser(
-    @Body('username') username: string,
-    @Body('password') password: string,
-    @Body('roleId') roleId: number,
-  ) {
-    this.userService.createUser(username, password, roleId);
+  createUser(@Body() userParams: UserParamsDto) {
+    this.userService.createUser(userParams);
     return { success: true };
   }
 
   @UseGuards(RolesGuard)
   @SetMetadata('roles', [2, 3])
   @Patch(':id')
-  updateUser(
-    @Param('id') id: number,
-    @Body('username') username: string,
-    @Body('password') password: string,
-    @Body('roleId') roleId: number,
-  ) {
-    this.userService.updateUser(id, username, password, roleId);
+  updateUser(@Param('id') id: number, @Body() userParams: UserParamsDto) {
+    this.userService.updateUser(id, userParams);
     return { success: true };
   }
 

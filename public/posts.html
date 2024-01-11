@@ -59,7 +59,7 @@
             border-radius: 12px;
             background-color: #f4f4f4;
         }
-        .manage-users-btn, .create-post-btn {
+        .manage-users-btn, .create-post-btn, .email-btn {
             padding: 10px 20px;
             background: #bbb;
             border: none;
@@ -67,7 +67,7 @@
             cursor: pointer;
             border-radius: 10%;
         }
-        .manage-users-btn:hover, .create-post-btn:hover {
+        .manage-users-btn:hover, .create-post-btn:hover, .email-btn:hover {
             background: #aaa;
             border-radius: 15%;
         }
@@ -75,7 +75,7 @@
 </head>
 <body>
     <h1>Posts</h1>
-    <div><button class="create-post-btn">Create Post</button> &nbsp; <button class="manage-users-btn" onclick="window.location.href='/manageUsersPage'">Manage Users</button></div>
+    <div><button class="create-post-btn">Create Post</button> &nbsp; <button class="manage-users-btn" onclick="window.location.href='/manageUsersPage'", style="display: none;">Manage Users</button>&nbsp; <button class="email-btn" onclick="window.location.href='/emailPage'", style="display: none;">Send Email</button></div>
     <div><h1></h1></a></div>
     <div id="posts"></div>
     <script>
@@ -211,6 +211,7 @@
                 document.querySelectorAll(".edit-btn").forEach(btn => btn.style.display = "inline-block");
                 document.querySelectorAll(".delete-btn").forEach(btn => btn.style.display = "inline-block");
                 document.querySelector(".manage-users-btn").style.display = "inline-block";
+                document.querySelector(".email-btn").style.display = "inline-block";
             }
         }
         // Create post

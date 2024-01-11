@@ -1,11 +1,4 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  BelongsTo,
-  ForeignKey,
-} from 'sequelize-typescript';
+import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
 import { Post } from 'src/post/post.model';
 
 @Table
@@ -23,10 +16,6 @@ export class Category extends Model {
   })
   name: string;
 
-  @ForeignKey(() => Post)
-  @Column
-  postId: number;
-
-  @BelongsTo(() => Post)
-  post: Post;
+  @HasMany(() => Post)
+  posts: Post[];
 }

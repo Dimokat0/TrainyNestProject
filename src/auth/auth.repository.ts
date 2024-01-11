@@ -5,6 +5,12 @@ import * as bcrypt from 'bcrypt';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
+import {
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common/exceptions';
+import { UserParamsDto } from 'src/dtos/dto.auth';
+import { NewAccessTokenResultDto } from 'src/dtos/dto.auth';
 
 export interface MyJwtPayload extends JwtPayload {
   userId: number;
@@ -12,11 +18,6 @@ export interface MyJwtPayload extends JwtPayload {
 
 export interface Request {
   user?: MyJwtPayload;
-}
-
-export interface NewAccessTokenResult {
-  success: boolean;
-  accessToken?: string;
 }
 
 @Injectable()
@@ -27,10 +28,12 @@ export class AuthRepository {
     private configService: ConfigService,
   ) {}
 
-  async registerUser(username: string, password: string): Promise<any> {
+  async registerUser(userParams: UserParamsDto): Promise<any> {
+    const username = userParams.username;
+    const password = userParams.password;
     const check = await this.userModel.findOne({ where: { username } });
     if (check) {
-      return { success: false, message: 'Username is taken' };
+      throw new BadRequestException('Username is taken!');
     } else {
       const hashedPassword = await bcrypt.hash(password, 10);
       await this.userModel.create({ username, password: hashedPassword });
@@ -60,10 +63,12 @@ export class AuthRepository {
     }
   }
 
-  async loginUser(username: string, password: string): Promise<any> {
+  async loginUser(userParams: UserParamsDto): Promise<any> {
+    const username = userParams.username;
+    const password = userParams.password;
     const user = await this.userModel.findOne({ where: { username } });
     if (!user) {
-      return { success: false, message: 'Wrong username!' };
+      throw new BadRequestException('Wrong username!');
     }
     const match = await bcrypt.compare(password, user.password);
     if (match) {
@@ -89,12 +94,12 @@ export class AuthRepository {
         userId: user.id,
       };
     }
-    return { success: false, message: 'Wrong password!' };
+    throw new BadRequestException('Wrong password!');
   }
 
   async generateNewAccessToken(
     refreshToken: string,
-  ): Promise<NewAccessTokenResult> {
+  ): Promise<NewAccessTokenResultDto> {
     try {
       const refreshTokenSecret =
         this.configService.get<string>('REFRESH_TOKEN_SECRET') ||
@@ -108,7 +113,7 @@ export class AuthRepository {
         where: { id: userId, refresh_token: refreshToken },
       });
       if (!user) {
-        return { success: false };
+        throw new UnauthorizedException('Unathorized!');
       } else {
         const accessTokenSecret =
           this.configService.get<string>('ACCESS_TOKEN_SECRET') ||
@@ -122,7 +127,10 @@ export class AuthRepository {
         return { success: true, accessToken };
       }
     } catch (err) {
-      return { success: false };
+      throw new BadRequestException('Something went wrong', {
+        cause: new Error(),
+        description: err,
+      });
     }
   }
 }

@@ -27,6 +27,13 @@ export class AppController {
     res.sendFile(join(__dirname, '..', 'public', 'manage_users.html'));
   }
 
+  @UseGuards(RolesGuard)
+  @SetMetadata('roles', [2, 3])
+  @Get('/emailPage')
+  mailPage(@Res() res: Response) {
+    res.sendFile(join(__dirname, '..', 'public', 'email.html'));
+  }
+
   @Get('/postsPage')
   posts(@Res() res: Response) {
     res.sendFile(join(__dirname, '..', 'public', 'posts.html'));

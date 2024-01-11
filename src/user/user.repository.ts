@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { MyJwtPayload } from 'src/auth/auth.repository';
 import { ConfigService } from '@nestjs/config';
+import { UserParamsDto } from 'src/dtos/dto.auth';
 
 @Injectable()
 export class UserRepository {
@@ -37,7 +38,8 @@ export class UserRepository {
     return this.userModel.findByPk(id);
   }
 
-  async createUser(username: string, password: string, roleId?: number) {
+  async createUser(userParams: UserParamsDto) {
+    const { username, password, roleId } = userParams;
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User();
     user.username = username;
@@ -47,21 +49,11 @@ export class UserRepository {
     return { success: true };
   }
 
-  async updateUser(
-    id: number,
-    username?: string,
-    password?: string,
-    roleId?: number,
-  ): Promise<[number]> {
-    const updateData: {
-      username?: string;
-      password?: string;
-      roleId?: number;
-    } = {};
-    if (username) updateData.username = username;
-    if (password) updateData.password = await bcrypt.hash(password, 10);
-    if (roleId) updateData.roleId = roleId;
-    return this.userModel.update(updateData, { where: { id } });
+  async updateUser(id: number, userParams: UserParamsDto): Promise<[number]> {
+    if (userParams.password) {
+      userParams.password = await bcrypt.hash(userParams.password, 10);
+    }
+    return this.userModel.update(userParams, { where: { id } });
   }
 
   async deleteUser(id: number): Promise<void> {

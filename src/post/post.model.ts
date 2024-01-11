@@ -6,7 +6,6 @@ import {
   BelongsTo,
   DataType,
   BelongsToMany,
-  HasOne,
 } from 'sequelize-typescript';
 import { User } from '../user/user.model';
 import { Tag } from '../tags/tag.model';
@@ -44,6 +43,10 @@ export class Post extends Model {
   })
   tags: Tag[];
 
-  @HasOne(() => Category)
+  @ForeignKey(() => Category)
+  @Column
+  categoryId: number;
+
+  @BelongsTo(() => Category)
   category: Category;
 }

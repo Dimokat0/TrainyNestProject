@@ -1,11 +1,29 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { AuthMiddleware } from 'src/auth/auth.middleware';
 import { SendgridService } from 'src/sendgrid/sendgrid.service';
+import { User } from 'src/user/user.model';
+import { UserModule } from 'src/user/user.module';
+import { UserRepository } from 'src/user/user.repository';
+import { UserService } from 'src/user/user.service';
 import { MailController } from './mail.controller';
 
 @Module({
-  imports: [],
+  imports: [SequelizeModule.forFeature([User]), UserModule],
   controllers: [MailController],
-  providers: [SendgridService, ConfigService],
+  providers: [SendgridService, ConfigService, UserService, UserRepository],
+  exports: [SendgridService],
 })
-export class MailModule {}
+export class MailModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes({ path: 'mail/send-email', method: RequestMethod.POST });
+  }
+}

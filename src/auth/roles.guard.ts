@@ -32,7 +32,6 @@ export class RolesGuard implements CanActivate {
         throw new ForbiddenException();
       }
     }
-
     return true;
   }
 }

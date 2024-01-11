@@ -6,6 +6,7 @@ import * as jwt from 'jsonwebtoken';
 import { MyJwtPayload } from 'src/auth/auth.repository';
 import { Category } from 'src/category/category.model';
 import { Tag } from 'src/tags/tag.model';
+import { PostParamsDto } from 'src/dtos/dto.post';
 
 @Injectable()
 export class PostRepository {
@@ -20,75 +21,76 @@ export class PostRepository {
   }
 
   async createPost(
-    name: string,
-    caption: string,
     access_token: string,
-    tagNames: string[],
-    categoryName: string,
+    postParams: PostParamsDto,
   ): Promise<Post> {
+    const name = postParams.name;
+    const caption = postParams.caption;
+    const tags = postParams.tags;
+    const category = postParams.category;
+
     const payload = jwt.verify(
       access_token,
       this.configService.get<string>('ACCESS_TOKEN_SECRET'),
     ) as MyJwtPayload;
     const authorId = payload.userId;
-    const [category] = await Category.findOrCreate({
-      where: { name: categoryName },
+    const [categoryName] = await Category.findOrCreate({
+      where: { name: category },
     });
-    const tags = await Promise.all(
-      tagNames.map(async (name) => {
-        const [tag] = await Tag.findOrCreate({ where: { name } });
-        return tag;
+    const tagNames = await Promise.all(
+      tags.map(async (tag) => {
+        const [tagName] = await Tag.findOrCreate({ where: { name: tag } });
+        return tagName;
       }),
     );
-    const tagIds = tags.map((tag) => tag.id);
+    const tagIds = tagNames.map((tag) => tag.id);
     const post = await this.postModel.create({
       name,
       caption,
       date: new Date(),
       authorId,
-      categoryId: category.id,
+      categoryId: categoryName.id,
     });
     await post.$set('tags', tagIds);
-    await post.$set('category', category);
+    await post.$set('category', categoryName.id);
     return post;
   }
 
-  async updatePost(
-    id: number,
-    name?: string,
-    caption?: string,
-    tagNames?: string[],
-    categoryName?: string,
-  ): Promise<[number]> {
+  async updatePost(id: number, postParams: PostParamsDto): Promise<[number]> {
+    const name = postParams.name;
+    const caption = postParams.caption;
+    const tags = postParams.tags;
+    const category = postParams.category;
+
     const updateData: Partial<{ name?: string; caption?: string }> = {};
     if (name) updateData.name = name;
     if (caption) updateData.caption = caption;
     const [updateCount] = await this.postModel.update(updateData, {
       where: { id },
     });
-    if (tagNames || categoryName) {
+    if (tags || category) {
       const post = await this.postModel.findByPk(id);
-      if (tagNames) {
-        const tags = await Promise.all(
-          tagNames.map(async (name) => {
-            const [tag] = await Tag.findOrCreate({ where: { name } });
-            return tag;
+      if (tags) {
+        const tagNames = await Promise.all(
+          tags.map(async (tag) => {
+            const [tagName] = await Tag.findOrCreate({ where: { name: tag } });
+            return tagName;
           }),
         );
-        const tagIds = tags.map((tag) => tag.id);
+        const tagIds = tagNames.map((tag) => tag.id);
         await post.$set('tags', tagIds);
       }
-      if (categoryName) {
-        const [category] = await Category.findOrCreate({
-          where: { name: categoryName },
+      if (category) {
+        const [categoryName] = await Category.findOrCreate({
+          where: { name: category },
         });
-        await post.$set('category', category);
+        await post.$set('category', categoryName);
       }
     }
     return [updateCount];
   }
 
   async deletePost(id: number): Promise<void> {
-    await this.postModel.destroy({ where: { id } });
+    await this.postModel.destroy({ where: { id: id } });
   }
 }

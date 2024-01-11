@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { PostParamsDto } from 'src/dtos/dto.post';
 
 @Controller('posts')
 export class PostController {
@@ -24,38 +25,17 @@ export class PostController {
 
   @Post()
   createPost(
-    @Body('name') name: string,
-    @Body('caption') caption: string,
     @Headers('authorization') access_token: string,
-    @Body('tags') tagNames: string[],
-    @Body('category') categoryName: string,
+    @Body() postParams: PostParamsDto,
   ) {
-    return this.postService.createPost(
-      name,
-      caption,
-      access_token,
-      tagNames,
-      categoryName,
-    );
+    return this.postService.createPost(access_token, postParams);
   }
 
   @UseGuards(RolesGuard)
   @SetMetadata('roles', [2, 3])
   @Patch(':id')
-  updatePost(
-    @Param('id') id: number,
-    @Body('name') name: string,
-    @Body('caption') caption: string,
-    @Body('tags') tagNames: string[],
-    @Body('category') categoryName: string,
-  ) {
-    return this.postService.updatePost(
-      id,
-      name,
-      caption,
-      tagNames,
-      categoryName,
-    );
+  updatePost(@Param('id') id: number, @Body() postParams: PostParamsDto) {
+    return this.postService.updatePost(id, postParams);
   }
 
   @UseGuards(RolesGuard)

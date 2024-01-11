@@ -12,15 +12,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      postId: {
-        type: Sequelize.BIGINT,
-        references: {
-          model: 'Posts',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

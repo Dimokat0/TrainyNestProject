@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PostRepository } from './post.repository';
-
+import { PostParamsDto } from 'src/dtos/dto.post';
 @Injectable()
 export class PostService {
   constructor(private readonly postRepository: PostRepository) {}
@@ -9,36 +9,12 @@ export class PostService {
     return this.postRepository.getAllPosts();
   }
 
-  createPost(
-    name: string,
-    caption: string,
-    access_token: string,
-    tagNames: string[],
-    categoryName: string,
-  ) {
-    return this.postRepository.createPost(
-      name,
-      caption,
-      access_token,
-      tagNames,
-      categoryName,
-    );
+  createPost(access_token: string, postParams: PostParamsDto) {
+    return this.postRepository.createPost(access_token, postParams);
   }
 
-  updatePost(
-    id: number,
-    name?: string,
-    caption?: string,
-    tagNames?: string[],
-    categoryName?: string,
-  ) {
-    return this.postRepository.updatePost(
-      id,
-      name,
-      caption,
-      tagNames,
-      categoryName,
-    );
+  updatePost(id: number, postParams: PostParamsDto) {
+    return this.postRepository.updatePost(id, postParams);
   }
 
   deletePost(id: number) {

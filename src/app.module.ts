@@ -55,6 +55,7 @@ export class AppModule implements NestModule {
       .forRoutes(
         { path: 'manageUsersPage/', method: RequestMethod.GET },
         { path: 'postsPage/', method: RequestMethod.GET },
+        { path: 'emailPage/', method: RequestMethod.GET },
       );
   }
 }

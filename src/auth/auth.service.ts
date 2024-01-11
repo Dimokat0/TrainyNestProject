@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
-
+import { UserParamsDto } from 'src/dtos/dto.auth';
 @Injectable()
 export class AuthService {
   constructor(private readonly authRepository: AuthRepository) {}
 
-  registerUser(username: string, password: string) {
-    return this.authRepository.registerUser(username, password);
+  registerUser(userParams: UserParamsDto) {
+    return this.authRepository.registerUser(userParams);
   }
 
-  loginUser(username: string, password: string) {
-    return this.authRepository.loginUser(username, password);
+  loginUser(userParams: UserParamsDto) {
+    return this.authRepository.loginUser(userParams);
   }
 
   accessToken(refreshToken: string) {
