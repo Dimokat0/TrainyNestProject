@@ -13,9 +13,16 @@ import { UserModule } from 'src/user/user.module';
 import { UserRepository } from 'src/user/user.repository';
 import { UserService } from 'src/user/user.service';
 import { MailController } from './mail.controller';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
-  imports: [SequelizeModule.forFeature([User]), UserModule],
+  imports: [
+    SequelizeModule.forFeature([User]),
+    UserModule,
+    BullModule.registerQueue({
+      name: 'mail',
+    }),
+  ],
   controllers: [MailController],
   providers: [SendgridService, ConfigService, UserService, UserRepository],
   exports: [SendgridService],
