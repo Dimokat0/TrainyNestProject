@@ -43,6 +43,12 @@ export class User extends Model {
 
   @Column({
     type: DataType.STRING,
+    allowNull: true,
+  })
+  phone: string;
+
+  @Column({
+    type: DataType.STRING,
   })
   access_token: string;
 

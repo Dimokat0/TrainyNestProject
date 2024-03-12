@@ -7,6 +7,8 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { User } from '../user/user.model';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
+import { SmsService } from 'src/sms/sms.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @Module({
   imports: [
@@ -21,9 +23,9 @@ import { AuthController } from './auth.controller';
         } as JwtModuleOptions;
       },
     }),
-    SequelizeModule.forFeature([User]),
+    SequelizeModule.forFeature([User])
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, ConfigService],
+  providers: [AuthService, AuthRepository, SmsService, RedisService, ConfigService],
 })
 export class AuthModule {}

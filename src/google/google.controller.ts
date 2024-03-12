@@ -1,6 +1,7 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { GoogleService } from './google.service';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('google')
 export class GoogleController {
@@ -8,10 +9,20 @@ export class GoogleController {
 
   @Get()
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {}
+  @ApiOperation({
+    summary: '[Google placeholder]',
+    description: 'Placeholder for google auth redirect',
+  })
+  async googleAuth(@Req() req) {
+    req;
+  }
 
   @Get('redirect')
   @UseGuards(AuthGuard('google'))
+  @ApiOperation({
+    summary: '[Google login redirect]',
+    description: 'Redirect for google authorization',
+  })
   async googleAuthRedirect(@Req() req, @Res() res) {
     const { access_token, refresh_token } = await this.service.googleLogin(req);
     res.cookie('accessToken', access_token, {
