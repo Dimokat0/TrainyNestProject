@@ -1,0 +1,253 @@
+<html>
+<head>
+    <title>Posts Page</title>
+    <style>
+        body {
+            color: #333;
+            background: linear-gradient(to right, #fff, #cacaca);
+            text-align: center;
+            padding-top: 100px;
+            font-family: Arial, sans-serif;
+        }
+        .post {
+            background: #f2f2f2;
+            border-radius: 5px;
+            display: inline-block;
+            padding: 20px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .post h2, .post p, .post h3 {
+            margin-bottom: 10px;
+        }
+        .post input[type="text"], .post input[type="password"] {
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+        .post button {
+            padding: 10px 20px;
+            background: #bbb;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 10%;
+        }
+        .post button:hover {
+            background: #aaa;
+            border-radius: 15%;
+        }
+        a {
+            color: #333;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f2f2f2;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+        }
+        a:hover {
+            background: #bbb;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 2px;
+            border: 1px solid gray;
+            border-radius: 12px;
+            background-color: #f4f4f4;
+        }
+        .manage-users-btn, .create-post-btn, .email-btn {
+            padding: 10px 20px;
+            background: #bbb;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 10%;
+        }
+        .manage-users-btn:hover, .create-post-btn:hover, .email-btn:hover {
+            background: #aaa;
+            border-radius: 15%;
+        }
+    </style>    
+</head>
+<body>
+    <h1>Posts</h1>
+    <div><button class="create-post-btn">Create Post</button> &nbsp; <button class="manage-users-btn" onclick="window.location.href='/manageUsersPage'", style="display: none;">Manage Users</button>&nbsp; <button class="email-btn" onclick="window.location.href='/emailPage'", style="display: none;">Send Email</button></div>
+    <div><h1></h1></a></div>
+    <div id="posts"></div>
+    <script>
+        function getCookie(name) {
+            let cookieArr = document.cookie.split(";");
+        
+            for(let i = 0; i < cookieArr.length; i++) {
+                let cookiePair = cookieArr[i].split("=");
+        
+                if(name == cookiePair[0].trim()) {
+                    return decodeURIComponent(cookiePair[1]);
+                }
+            }
+            return null;
+        }
+        async function sendRequest(method, url, data) {    
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    "authorization": getCookie("accessToken"),
+                    },
+                    body: JSON.stringify(data),
+            });
+
+            // Return response text for non-JSON responses
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return response.json();
+            } else {
+                return response.text();
+            }
+        }
+
+        async function fetchPosts() {
+            try {
+                const posts = await sendRequest("GET", "/posts");
+                const postsContainer = document.getElementById("posts");
+                posts.forEach(post => {
+                    const postDiv = document.createElement("div");
+                    postDiv.classList.add("post");
+                    let categoryName;
+                    try {
+                        categoryName = post.category.name;
+                    } catch {
+                        categoryName = 'No Category';
+                    }
+                    postDiv.innerHTML = `
+                        <h2 contenteditable="false">${post.name}</h2>
+                        <p contenteditable="false">${post.caption}</p>
+                        <div><h3 contenteditable="false">${categoryName}</h3></div>
+                        <div class="tags"></div>
+                        <small>By ${post.author.username} on ${new Date(post.date).toLocaleDateString()}</small>
+                        <div><button class="edit-btn" style="display: none;">Edit</button><button class="delete-btn", style="display: none;">Delete</button></div>
+                        <div><button class="confirm-btn" style="display: none;">Confirm</button></div>`;
+                    postsContainer.appendChild(postDiv);
+
+                    const tagsDiv = postDiv.querySelector(".tags");
+                    post.tags.forEach(tag => {
+                        const tagSpan = document.createElement("span");
+                        tagSpan.classList.add("tag");
+                        let tagName;
+                        try {
+                            tagName = tag.name;
+                        } catch {
+                            tagName = "No tags";
+                        }
+                        tagSpan.textContent = tagName;
+                        tagsDiv.appendChild(tagSpan);
+                    });
+
+                    // Delete button functionality
+                    const deleteBtn = postDiv.querySelector(".delete-btn")
+                    deleteBtn.addEventListener('click', function() {
+                        const response = sendRequest('DELETE', '/posts/' + post.id, {
+                        }).then(function(response) {
+                            postDiv.remove();
+                        })
+                    });
+
+                    // Edit button functionality
+                    const editBtn = postDiv.querySelector(".edit-btn");
+                    const confirmBtn = postDiv.querySelector(".confirm-btn");
+                    const h2 = postDiv.querySelector("h2");
+                    const p = postDiv.querySelector("p");
+                    const h3 = postDiv.querySelector("h3");
+                    const tagElements = tagsDiv.querySelectorAll("span");
+
+                    editBtn.addEventListener('click', function() {
+                        h2.contentEditable = true;
+                        p.contentEditable = true;
+                        confirmBtn.style.display = "block";
+                        tagElements.forEach(tag => {
+                            tag.contentEditable = true;
+                        });
+                        h3.contentEditable = true;
+                    });
+
+                    confirmBtn.addEventListener('click', function() {
+                        h2.contentEditable = false;
+                        p.contentEditable = false;
+                        h3.contentEditable = false;
+                        const tags = [];
+                        tagElements.forEach(tag => {
+                            tag.contentEditable = false;
+                            tags.push(tag.textContent);
+                        });
+                        confirmBtn.style.display = "none";
+
+                        sendRequest('PATCH', '/posts/' + post.id, {
+                            id: post.id,
+                            name: h2.textContent,
+                            caption: p.textContent,
+                            tags: tags,
+                            category: h3.textContent,
+                        });                        
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        }        
+        async function checkUserType() {
+            const response = await fetch("/users/getUserType", {
+                headers: {
+                    "Content-Type": "application/json",
+                    "authorization": getCookie("accessToken"),
+                },
+            });
+            // if user 2 or 3 then show edit and delete buttons
+            const check = await response.json();
+            if (check.userType === 2 | check.userType === 3) {
+                document.querySelectorAll(".edit-btn").forEach(btn => btn.style.display = "inline-block");
+                document.querySelectorAll(".delete-btn").forEach(btn => btn.style.display = "inline-block");
+                document.querySelector(".manage-users-btn").style.display = "inline-block";
+                document.querySelector(".email-btn").style.display = "inline-block";
+            }
+        }
+        // Create post
+            document.querySelector(".create-post-btn").addEventListener('click', function() {
+            const postsContainer = document.getElementById("posts");
+            const postDiv = document.createElement("div");
+            postDiv.classList.add("post");
+            postDiv.innerHTML = `
+                <h2 contenteditable="true"></h2>
+                <p contenteditable="true"></p>
+                <div><h3 contenteditable="true"</h3></div>
+                <div><input class="tags-input" placeholder="Enter tags separated by commas"></div>
+                <div><button class="confirm-btn">Confirm</button></div>`;
+            postsContainer.prepend(postDiv);
+            const confirmBtn = postDiv.querySelector(".confirm-btn");
+            const h2 = postDiv.querySelector("h2");
+            const p = postDiv.querySelector("p");
+            const h3 = postDiv.querySelector("h3");
+            const tagsI = postDiv.querySelector(".tags-input");
+
+            confirmBtn.addEventListener('click', function() {
+                h2.contentEditable = false;
+                p.contentEditable = false;
+                h3.contentEditable = false;
+                const tags = tagsI.value.split(',').map(tag => tag.trim());
+                console.log('Name: ' + h2.textContent + '\nCaption: ' + p.textContent + '\nTags: ' + tags + '\nCategory: ' + h3.textContent);
+                sendRequest('POST', '/posts/', {
+                    name: h2.textContent,
+                    caption: p.textContent,
+                    tags: tags,
+                    category: h3.textContent,
+                });                
+            confirmBtn.remove()
+            });
+        });
+        fetchPosts().then(() => checkUserType());
+    </script>
+</body>
+</html>

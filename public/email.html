@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Send Email</title>
+  <style>
+    body {
+        color: #333;
+        background: linear-gradient(to right, #fff, #cacaca);
+        text-align: center;
+        padding-top: 100px;
+        font-family: Arial, sans-serif;
+      }
+      #email-form {
+        background: #f2f2f2;
+        border-radius: 5px;
+        display: inline-block;
+        padding: 20px;
+        box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+      }
+      #email-form label {
+        display: block;
+        margin-bottom: 10px;
+      }
+      #email-form input[type="text"], #login-form input[type="password"] {
+        padding: 10px;
+        width: 200px;
+        margin-bottom: 20px;
+      }
+      #email-form input[type="submit"] {
+        padding: 10px 20px;
+        background: #bbb;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        border-radius: 10%;
+      }
+      #email-form input[type="submit"]:hover {
+        background: #aaa;
+        border-radius: 15%;
+      }
+  </style>
+</head>
+<body>
+  <form id="email-form">
+    <label for="to">To:</label><br>
+    <input type="text" id="to" name="to"><br>
+    <label for="subject">Subject:</label><br>
+    <input type="text" id="subject" name="subject"><br>
+    <label for="from">From:</label><br>
+    <input type="text" id="from" name="from"><br>
+    <label for="text">Text:</label><br>
+    <input type="text" id="text" name="text"><br>
+    <label for="html">HTML:</label><br>
+    <input type="text" id="html" name="html"><br>
+    <input type="submit" value="Submit">
+  </form>
+
+  <script>
+    function getCookie(name) {
+      let cookieArr = document.cookie.split(";");
+
+      for(let i = 0; i < cookieArr.length; i++) {
+        let cookiePair = cookieArr[i].split("=");
+
+        if(name == cookiePair[0].trim()) {
+          return decodeURIComponent(cookiePair[1]);
+        }
+      }
+      return null;
+    }
+
+    async function sendRequest(method, url, data) {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "authorization": getCookie("accessToken"),
+        },
+        body: JSON.stringify(data),
+      });
+
+      // Return response text for non-JSON responses
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      } else {
+        return response.text();
+      }
+    }
+
+    document.getElementById('email-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const to = document.getElementById('to').value;
+      const subject = document.getElementById('subject').value;
+      const from = document.getElementById('from').value;
+      const text = document.getElementById('text').value;
+      const html = document.getElementById('html').value;
+
+      const data = { to, subject, from, text, html };
+
+      const result = sendRequest('POST', '/mail/send-email', data);
+      console.log(result);
+    });
+  </script>
+</body>
+</html>
