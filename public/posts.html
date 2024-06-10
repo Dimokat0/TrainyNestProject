@@ -1,5 +1,6 @@
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
     <title>Posts Page</title>
     <style>
         body {
@@ -35,6 +36,7 @@
             color: #fff;
             cursor: pointer;
             border-radius: 10%;
+            margin: 5px;
         }
         .post button:hover {
             background: #aaa;
@@ -47,6 +49,8 @@
             border-radius: 5px;
             background: #f2f2f2;
             box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            display: inline-block;
+            margin: 5px;
         }
         a:hover {
             background: #bbb;
@@ -66,12 +70,45 @@
             color: #fff;
             cursor: pointer;
             border-radius: 10%;
+            margin: 5px;
         }
         .manage-users-btn:hover, .create-post-btn:hover, .email-btn:hover {
             background: #aaa;
             border-radius: 15%;
         }
-    </style>    
+
+        @media (max-width: 600px) {
+            body {
+                padding-top: 50px;
+            }
+            .post {
+                width: 95%;
+                max-width: 500px;
+                padding: 15px;
+                margin: 20px auto;
+            }
+            .post input[type="text"], .post input[type="password"] {
+                width: 100%;
+                padding: 8px;
+            }
+            .post button {
+                width: auto;
+                padding: 12px;
+                font-size: 14px;
+            }
+            a {
+                display: inline-block;
+                width: auto;
+                margin: 10px auto;
+                padding: 12px;
+            }
+            .manage-users-btn, .create-post-btn, .email-btn {
+                width: auto;
+                margin: 10px auto;
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
 <body>
     <h1>Posts</h1>
@@ -101,7 +138,6 @@
                     body: JSON.stringify(data),
             });
 
-            // Return response text for non-JSON responses
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 return response.json();
@@ -220,9 +256,9 @@
             const postDiv = document.createElement("div");
             postDiv.classList.add("post");
             postDiv.innerHTML = `
-                <h2 contenteditable="true"></h2>
-                <p contenteditable="true"></p>
-                <div><h3 contenteditable="true"</h3></div>
+                <h2 contenteditable="true">Name</h2>
+                <p contenteditable="true">Description</p>
+                <div><h3 contenteditable="true">Category</h3></div>
                 <div><input class="tags-input" placeholder="Enter tags separated by commas"></div>
                 <div><button class="confirm-btn">Confirm</button></div>`;
             postsContainer.prepend(postDiv);

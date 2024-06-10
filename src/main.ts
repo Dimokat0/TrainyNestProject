@@ -33,7 +33,7 @@ async function bootstrap() {
   });
 
   await app.listen(3000);
+  console.log('Starting server on http://localhost:3000');
 }
 
-console.log('Starting server on http://localhost:3000');
 bootstrap();

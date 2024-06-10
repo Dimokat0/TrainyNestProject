@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <title>Register Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
       body {
         color: #333;
@@ -15,18 +16,23 @@
         border-radius: 5px;
         display: inline-block;
         padding: 20px;
-        box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+        box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+        width: 90%;
+        max-width: 400px;
+        margin: 0 auto;
       }
       #register-form label {
         display: block;
         margin-bottom: 10px;
       }
-      #register-form input[type="text"], #register-form input[type="password"] {
+      #register-form input[type='text'],
+      #register-form input[type='password'] {
         padding: 10px;
-        width: 200px;
+        width: calc(100% - 20px);
         margin-bottom: 20px;
+        box-sizing: border-box;
       }
-      #register-form input[type="submit"] {
+      #register-form input[type='submit'] {
         padding: 10px 20px;
         background: #bbb;
         border: none;
@@ -34,9 +40,29 @@
         cursor: pointer;
         border-radius: 10%;
       }
-      #register-form input[type="submit"]:hover {
+      #register-form input[type='submit']:hover {
         background: #aaa;
         border-radius: 15%;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding-top: 50px;
+        }
+        #register-form {
+          width: 95%;
+          padding: 15px;
+        }
+        #register-form input[type='text'],
+        #register-form input[type='password'] {
+          padding: 8px;
+          width: calc(100% - 16px);
+        }
+        #register-form input[type='submit'] {
+          width: auto;
+          padding: 12px;
+          font-size: 14px;
+        }
       }
     </style>
   </head>
@@ -50,24 +76,26 @@
       <input type="submit" value="Submit" />
     </form>
     <script>
-      const registerForm = document.querySelector("#register-form");
-      registerForm.addEventListener("submit", async (event) => {
+      const registerForm = document.querySelector('#register-form');
+      registerForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(registerForm);
         const data = Object.fromEntries(formData.entries());
-        const response = await fetch("auth/register", {
-          method: "POST",
+        const response = await fetch('auth/register', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
         });
         const result = await response.json();
         alert(result.message);
         if (result.message === 'Register success!') {
-          document.cookie = "accessToken=" + result.accessToken + "; max-age=3600";
-          document.cookie = "refreshToken=" + result.refreshToken + "; max-age=3600";
-          window.location.href = "/postsPage";
+          document.cookie =
+            'accessToken=' + result.accessToken + '; max-age=3600';
+          document.cookie =
+            'refreshToken=' + result.refreshToken + '; max-age=3600';
+          window.location.href = '/postsPage';
         }
       });
     </script>
