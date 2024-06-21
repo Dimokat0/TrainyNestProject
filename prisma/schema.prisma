@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id       String    @id @default(uuid()) @db.Uuid()
+  phone    String?   @unique()
+  email    String    @unique()
+  username String    @unique()
+  password String
+  role     rolesEnum @default(MEMBER)
+  posts    post[]
+}
+
+model post {
+  id         String   @id @default(uuid()) @db.Uuid()
+  title      String   @db.VarChar(100)
+  content    String   @db.VarChar(250)
+  authorId   String   @db.Uuid()
+  categoryId String   @db.Uuid()
+  parentId   String?  @db.Uuid()
+  author     user     @relation(fields: [authorId], references: [id])
+  category   category @relation(fields: [categoryId], references: [id])
+  tags       tag[]
+  parent     post?    @relation("CommentOnPost", fields: [parentId], references: [id])
+  children   post[]   @relation("CommentOnPost")
+}
+
+model category {
+  id    String @id @default(uuid()) @db.Uuid()
+  name  String @unique()
+  posts post[]
+}
+
+model tag {
+  id    String @id @default(uuid()) @db.Uuid()
+  name  String @unique()
+  posts post[]
+}
+
+enum rolesEnum {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
