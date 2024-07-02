@@ -1,96 +1,110 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Post } from './post.model';
-import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
-import { MyJwtPayload } from 'src/modules/auth/auth.repository';
-import { Category } from 'src/category/category.model';
-import { Tag } from 'src/tags/tag.model';
-import { PostParamsDto } from 'src/dtos/dto.post';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PostParamsDto } from './dto/post-params.dto';
+import { PrismaService } from 'prisma/prisma.service';
+import { PostResponseDto } from './dto/post-res.dto';
+import { PaginatedPostsResponseDto } from './dto/paginated-posts-res.dto';
+import { PaginationRequestDto } from 'src/common/dto';
+import { Prisma } from '@prisma/client';
+
+type PostUpdateInputCombined = Prisma.postUncheckedUpdateInput &
+  Prisma.postUpdateInput;
 
 @Injectable()
 export class PostRepository {
-  constructor(
-    @InjectModel(Post)
-    private postModel: typeof Post,
-    readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async getAllPosts(): Promise<Post[]> {
-    return this.postModel.findAll({ include: ['author', 'tags', 'category'] });
+  async getAllPosts(
+    dto: PaginationRequestDto,
+  ): Promise<PaginatedPostsResponseDto> {
+    const { page, limit } = dto;
+    const skip = (page - 1) * limit;
+    const posts = await this.prisma.post.findMany({
+      skip,
+      take: limit,
+      include: {
+        author: true,
+        tags: true,
+        category: true,
+      },
+    });
+    return {
+      page,
+      limit,
+      data: posts.map((post) => PostResponseDto.mapFrom(post)),
+    };
   }
 
   async createPost(
-    access_token: string,
+    userId: string,
     postParams: PostParamsDto,
-  ): Promise<Post> {
-    const name = postParams.name;
-    const caption = postParams.caption;
-    const tags = postParams.tags;
-    const category = postParams.category;
-
-    const payload = jwt.verify(
-      access_token,
-      this.configService.get<string>('ACCESS_TOKEN_SECRET'),
-    ) as MyJwtPayload;
-    const authorId = payload.userId;
-    const [categoryName] = await Category.findOrCreate({
-      where: { name: category },
-    });
-    const tagNames = await Promise.all(
-      tags.map(async (tag) => {
-        const [tagName] = await Tag.findOrCreate({ where: { name: tag } });
-        return tagName;
-      }),
-    );
-    const tagIds = tagNames.map((tag) => tag.id);
-    const post = await this.postModel.create({
-      name,
-      caption,
-      date: new Date(),
-      authorId,
-      categoryId: categoryName.id,
-    });
-    await post.$set('tags', tagIds);
-    await post.$set('category', categoryName.id);
-    return post;
-  }
-
-  async updatePost(id: number, postParams: PostParamsDto): Promise<[number]> {
-    const name = postParams.name;
-    const caption = postParams.caption;
-    const tags = postParams.tags;
-    const category = postParams.category;
-
-    const updateData: Partial<{ name?: string; caption?: string }> = {};
-    if (name) updateData.name = name;
-    if (caption) updateData.caption = caption;
-    const [updateCount] = await this.postModel.update(updateData, {
-      where: { id },
-    });
-    if (tags || category) {
-      const post = await this.postModel.findByPk(id);
-      if (tags) {
-        const tagNames = await Promise.all(
-          tags.map(async (tag) => {
-            const [tagName] = await Tag.findOrCreate({ where: { name: tag } });
-            return tagName;
-          }),
-        );
-        const tagIds = tagNames.map((tag) => tag.id);
-        await post.$set('tags', tagIds);
-      }
-      if (category) {
-        const [categoryName] = await Category.findOrCreate({
-          where: { name: category },
-        });
-        await post.$set('category', categoryName);
-      }
+  ): Promise<PostResponseDto> {
+    const { title, content, category, tags } = postParams;
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with id: ${userId} is not found`);
     }
-    return [updateCount];
+
+    const post = await this.prisma.post.create({
+      data: {
+        title,
+        content,
+        author: { connect: { id: userId } },
+        category: { connect: { name: category } },
+        tags: { connect: tags.map((tag) => ({ name: tag })) },
+      },
+      include: {
+        author: true,
+        tags: true,
+        category: true,
+      },
+    });
+    const response = PostResponseDto.mapFrom(post);
+    return response;
   }
 
-  async deletePost(id: number): Promise<void> {
-    await this.postModel.destroy({ where: { id: id } });
+  async updatePost(
+    id: string,
+    postParams: PostParamsDto,
+  ): Promise<PostResponseDto> {
+    const { title, content, category, tags } = postParams;
+    const post = await this.prisma.post.findUnique({ where: { id } });
+    if (!post) {
+      throw new NotFoundException(`Post with id: ${id} is not found`);
+    }
+    const updateData: PostUpdateInputCombined = {};
+    if (title) updateData.title = title;
+    if (content) updateData.content = content;
+    if (category) {
+      updateData.category = { connect: { name: category } };
+    }
+    if (tags) {
+      const tagNames = await Promise.all(
+        tags.map(async (tag) => {
+          const tagName = await this.prisma.tag.upsert({
+            where: { name: tag },
+            create: { name: tag },
+            update: {},
+          });
+          return tagName;
+        }),
+      );
+      updateData.tags = { connect: tagNames.map((t) => ({ id: t.id })) };
+    }
+    const updatedPost = await this.prisma.post.update({
+      where: { id },
+      data: updateData as Prisma.postUpdateInput,
+      include: {
+        author: true,
+        tags: true,
+        category: true,
+      },
+    });
+
+    const response = PostResponseDto.mapFrom(updatedPost);
+    return response;
+  }
+
+  async deletePost(id: string): Promise<void> {
+    await this.prisma.post.delete({ where: { id } });
   }
 }

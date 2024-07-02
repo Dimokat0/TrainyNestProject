@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { MailOptionsDto } from './dto/mail-options.dto';
 
 @Injectable()
 export class MailQueueService {

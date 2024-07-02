@@ -1,17 +1,11 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AuthMiddleware } from 'src/modules/auth/auth.middleware';
 import { SendgridService } from 'src/modules/sendgrid/sendgrid.service';
 import { UserModule } from 'src/modules/user/user.module';
-import { UserRepository } from 'src/modules/user/user.repository';
 import { UserService } from 'src/modules/user/user.service';
 import { MailController } from './mail.controller';
 import { BullModule } from '@nestjs/bull';
+import { PrismaService } from 'prisma/prisma.service';
 
 @Module({
   imports: [
@@ -21,13 +15,7 @@ import { BullModule } from '@nestjs/bull';
     }),
   ],
   controllers: [MailController],
-  providers: [SendgridService, ConfigService, UserService, UserRepository],
+  providers: [SendgridService, ConfigService, PrismaService, UserService],
   exports: [SendgridService],
 })
-export class MailModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AuthMiddleware)
-      .forRoutes({ path: 'mail/send-email', method: RequestMethod.POST });
-  }
-}
+export class MailModule {}

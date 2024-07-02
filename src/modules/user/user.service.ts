@@ -37,11 +37,11 @@ export class UserService {
     return response;
   }
 
-  async updateUser(id: number, userParams: UserParamsDto) {
-    return this.userRepository.updateUser(id, userParams);
-  }
-
-  async deleteUser(id: number) {
-    return this.userRepository.deleteUser(id);
+  async deleteUser(id: string) {
+    return await this.prisma.user.delete({
+      where: {
+        id: id,
+      },
+    });
   }
 }

@@ -17,7 +17,10 @@ export class JwtAuthService {
   }
 
   async signAsync(payload, options?): Promise<any> {
-    return this.jwtService.signAsync(payload, options);
+    return this.jwtService.signAsync(payload, {
+      secret: this.TOKEN_SECRET,
+      ...options,
+    });
   }
 
   decode(token: string, options?): any {

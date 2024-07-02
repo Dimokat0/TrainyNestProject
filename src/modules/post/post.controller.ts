@@ -3,18 +3,19 @@ import {
   Get,
   Post,
   Body,
-  Headers,
   Patch,
   Param,
   Delete,
-  UseGuards,
-  SetMetadata,
+  Query,
 } from '@nestjs/common';
 import { PostService } from './post.service';
-import { RolesGuard } from 'src/modules/auth/roles.guard';
-import { PostParamsDto } from 'src/dtos/dto.post';
-import { ApiOperation } from '@nestjs/swagger';
-import { RolesEnum } from 'src/enums/roles.enum';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PostParamsDto } from './dto/post-params.dto';
+import { PaginationRequestDto } from 'src/common/dto';
+import { ApiJwtPayload } from 'src/interface/jwt-payload.interface';
+import { HttpUser } from 'src/common/decorators';
+import { PaginatedPostsResponseDto } from './dto/paginated-posts-res.dto';
+import { PostResponseDto } from './dto/post-res.dto';
 
 @Controller('posts')
 export class PostController {
@@ -22,32 +23,31 @@ export class PostController {
 
   @Get()
   @ApiOperation({ summary: '[Get all posts]', description: 'Get all posts' })
-  getAllPosts() {
-    return this.postService.getAllPosts();
+  @ApiResponse({ type: PaginatedPostsResponseDto })
+  getAllPosts(@Query() dto: PaginationRequestDto) {
+    return this.postService.getAllPosts(dto);
   }
 
   @Post()
   @ApiOperation({ summary: '[Create post]', description: 'Create new post' })
+  @ApiResponse({ type: PostResponseDto })
   createPost(
-    @Headers('authorization') access_token: string,
     @Body() postParams: PostParamsDto,
+    @HttpUser() user: ApiJwtPayload,
   ) {
-    return this.postService.createPost(access_token, postParams);
+    return this.postService.createPost(user.id, postParams);
   }
 
-  @UseGuards(RolesGuard)
-  @SetMetadata('roles', [RolesEnum.ADMIN, RolesEnum.SUPER_ADMIN])
   @ApiOperation({ summary: '[Update post]', description: 'Update single post' })
+  @ApiResponse({ type: PostResponseDto })
   @Patch(':id')
-  updatePost(@Param('id') id: number, @Body() postParams: PostParamsDto) {
+  updatePost(@Param('id') id: string, @Body() postParams: PostParamsDto) {
     return this.postService.updatePost(id, postParams);
   }
 
-  @UseGuards(RolesGuard)
-  @SetMetadata('roles', [RolesEnum.ADMIN, RolesEnum.SUPER_ADMIN])
   @ApiOperation({ summary: '[Delete post]', description: 'Delete single post' })
   @Delete(':id')
-  deletePost(@Param('id') id: number) {
+  deletePost(@Param('id') id: string) {
     return this.postService.deletePost(id);
   }
 }

@@ -4,6 +4,11 @@ import { plainToClass, Expose } from 'class-transformer';
 import { user } from '@prisma/client';
 
 export class UserResponseDto {
+  @ApiProperty({ example: 'string', description: 'User id' })
+  @IsString()
+  @Expose()
+  id: string;
+
   @ApiProperty({ example: 'alex@gmail.com' })
   @IsEmail()
   @Expose()
@@ -18,7 +23,7 @@ export class UserResponseDto {
   @Expose()
   phone?: string;
 
-  @ApiProperty({ description: 'Access Token' })
+  @ApiPropertyOptional({ description: 'Access Token' })
   @IsOptional()
   @IsString()
   @Expose()

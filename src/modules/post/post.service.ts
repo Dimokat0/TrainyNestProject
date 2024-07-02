@@ -1,23 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { PostRepository } from './post.repository';
-import { PostParamsDto } from 'src/dtos/dto.post';
+import { PostParamsDto } from './dto/post-params.dto';
+import { PaginationRequestDto } from 'src/common/dto';
+import { PostResponseDto } from './dto/post-res.dto';
+import { PaginatedPostsResponseDto } from './dto/paginated-posts-res.dto';
 @Injectable()
 export class PostService {
   constructor(private readonly postRepository: PostRepository) {}
 
-  getAllPosts() {
-    return this.postRepository.getAllPosts();
+  getAllPosts(dto: PaginationRequestDto): Promise<PaginatedPostsResponseDto> {
+    return this.postRepository.getAllPosts(dto);
   }
 
-  createPost(access_token: string, postParams: PostParamsDto) {
-    return this.postRepository.createPost(access_token, postParams);
+  createPost(
+    userId: string,
+    postParams: PostParamsDto,
+  ): Promise<PostResponseDto> {
+    return this.postRepository.createPost(userId, postParams);
   }
 
-  updatePost(id: number, postParams: PostParamsDto) {
+  updatePost(id: string, postParams: PostParamsDto): Promise<PostResponseDto> {
     return this.postRepository.updatePost(id, postParams);
   }
 
-  deletePost(id: number) {
+  deletePost(id: string): Promise<void> {
     return this.postRepository.deletePost(id);
   }
 }

@@ -1,7 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Query,
+  Get,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SmsService } from '../sms/sms.service';
-import { RedisService } from '../redis/redis.service';
 import {
   ApiInternalServerErrorResponse,
   ApiOperation,
@@ -10,19 +19,16 @@ import {
 import { SignUpRequestDto } from './dto/sign-up-req.dto';
 import { SignInRequestDto } from './dto/sign-in-req.dto';
 import { UserResponseDto } from '../../common/dto/user-res.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly smsService: SmsService,
-    private readonly redisService: RedisService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Register user',
+    summary: '[Register user]',
     description: 'Auth endpoint for user registration',
   })
   @ApiResponse({ type: UserResponseDto })
@@ -34,7 +40,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Login user',
+    summary: '[Login user]',
     description: 'Auth endpoint for user login',
   })
   @ApiResponse({ type: UserResponseDto })
@@ -44,27 +50,48 @@ export class AuthController {
   }
 
   @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Send otp',
+    summary: '[Send otp]',
     description: 'Send otp by phone number',
   })
-  async sendOtp(@Body() body: { phone: string }) {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await this.smsService.sendSms(body.phone, `Your code is: ${otp}`);
-    await this.redisService.setOtp(body.phone, otp);
+  async sendOtp(@Query('phone') phone: string) {
+    await this.authService.sendOtp(phone);
   }
 
   @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Verify otp',
+    summary: '[Verify otp]',
     description: 'Verify otp by phone number',
   })
-  async verifyOtp(@Body() body: { phone: string; otp: string }) {
-    const otp = await this.redisService.getOtp(body.phone);
-    if (otp === body.otp) {
-      return true;
-    } else {
-      return false;
-    }
+  async verifyOtp(@Query() data: { phone: string; otp: string }) {
+    return await this.authService.verifyOtp(data.phone, data.otp);
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({
+    summary: '[Google placeholder]',
+    description: 'Placeholder for google auth redirect',
+  })
+  async googleAuth(@Req() req) {
+    return;
+  }
+
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({
+    summary: '[Google login redirect]',
+    description: 'Redirect for google authorization',
+  })
+  async googleAuthRedirect(@Req() req, @Res() res) {
+    const userResponse = await this.authService.googleLogin(req);
+    res.cookie('accessToken', userResponse.accessToken, {
+      maxAge: 3600000,
+      httpOnly: false,
+      path: '/',
+    });
+    res.redirect('/posts.html');
   }
 }

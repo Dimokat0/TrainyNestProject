@@ -1,6 +1,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { SendgridService } from '../sendgrid/sendgrid.service';
 import { ApiOperation } from '@nestjs/swagger';
+import { MailOptionsDto } from './dto/mail-options.dto';
 
 @Controller('mail')
 export class MailController {
